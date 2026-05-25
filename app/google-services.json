@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1011793481555",
+    "project_id": "rookie-346a2",
+    "storage_bucket": "rookie-346a2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1011793481555:android:d9a25dbd45bede56abdba6",
+        "android_client_info": {
+          "package_name": "com.bamboo.ktf"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAM-3QqwsjjDzn7ZPSwEgABU3zuUEYK93o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

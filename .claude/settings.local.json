@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(keytool *)",
+      "Bash(./gradlew tasks *)",
+      "Bash(./gradlew assembleDevDebug)",
+      "Bash(./gradlew assembleReleaseFlavorRelease)",
+      "Bash(aapt dump *)",
+      "Bash(apkinfo /Users/liuyun/yunyun/gexin/projecjs/kl_app_first/app/build/outputs/apk/dev/debug/app-dev-debug.apk)",
+      "Bash(java -jar /usr/local/bin/apktool.jar d -f -o /tmp/apk-dev /Users/liuyun/yunyun/gexin/projecjs/kl_app_first/app/build/outputs/apk/dev/debug/app-dev-debug.apk)",
+      "Read(//tmp/apk-dev/**)",
+      "Bash(./gradlew bundleReleaseFlavorRelease *)",
+      "WebFetch(domain:www.yuque.com)",
+      "Bash(./gradlew :app:compileDebugKotlin)"
+    ]
+  }
+}
