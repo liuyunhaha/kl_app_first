@@ -4,13 +4,30 @@ import android.app.Application
 import android.util.Log
 import cn.dataeye.android.DataEyeAnalyticsSDK
 import com.appsflyer.AppsFlyerLib
+import com.bamboo.ktf.ad.AdMobAppOpenAdManager
+import com.google.android.gms.ads.MobileAds
 
 class KtfApplication : Application() {
+    companion object {
+        @Volatile
+        var appOpenAdManager: AdMobAppOpenAdManager? = null
+            private set
+    }
+
     override fun onCreate() {
         super.onCreate()
 
+        initAdMob()
         initAppsFlyer()
         initDataEye()
+    }
+
+    private fun initAdMob() {
+        MobileAds.initialize(this)
+        appOpenAdManager = AdMobAppOpenAdManager(
+            application = this,
+            adUnitId = Constants.ADMOB_APP_OPEN_AD_UNIT_ID,
+        )
     }
 
     private fun initAppsFlyer() {

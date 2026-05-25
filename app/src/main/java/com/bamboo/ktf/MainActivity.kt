@@ -70,6 +70,18 @@ fun MainScreen(modifier: Modifier = Modifier) {
 
         Button(
             onClick = {
+                val intent = Intent(context, AdTestActivity::class.java)
+                context.startActivity(intent)
+            },
+            modifier = Modifier
+                .padding(top = 12.dp)
+                .width(200.dp)
+        ) {
+            Text("测试AdMob广告")
+        }
+
+        Button(
+            onClick = {
                 FirebaseCrashlytics.getInstance().log("Manual Crashlytics test (non-fatal)")
                 FirebaseCrashlytics.getInstance().recordException(IllegalStateException("Manual non-fatal test"))
             },

@@ -1,6 +1,6 @@
 [versions]
 agp = "8.13.2"
-kotlin = "2.0.21"
+kotlin = "2.3.0"
 coreKtx = "1.10.1"
 junit = "4.13.2"
 junitVersion = "1.3.0"
@@ -15,6 +15,7 @@ googleServices = "4.4.4"
 firebaseCrashlyticsGradle = "3.0.6"
 dataeyeAndroidSdk = "2.8.3"
 appsFlyerAndroidSdk = "6.17.5"
+playServicesAds = "25.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -38,6 +39,7 @@ firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
 dataeye-android-sdk = { group = "io.github.dataeyesdk", name = "dataeye-android-sdk", version.ref = "dataeyeAndroidSdk" }
 appsflyer-android-sdk = { group = "com.appsflyer", name = "af-android-sdk", version.ref = "appsFlyerAndroidSdk" }
+google-play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServicesAds" }
 
 
 [plugins]
