@@ -12,14 +12,18 @@ class KtfApplication : Application() {
         @Volatile
         var appOpenAdManager: AdMobAppOpenAdManager? = null
             private set
+
+        @Volatile
+        var dataEyeInstance: DataEyeAnalyticsSDK? = null
+            private set
     }
 
     override fun onCreate() {
         super.onCreate()
 
+        initDataEye()
         initAdMob()
         initAppsFlyer()
-        initDataEye()
     }
 
     private fun initAdMob() {
@@ -60,6 +64,7 @@ class KtfApplication : Application() {
         }
 
         val instance = DataEyeAnalyticsSDK.sharedInstance(this, appId, serverUrl)
+        dataEyeInstance = instance
 
         val eventTypes = listOf(
             DataEyeAnalyticsSDK.AutoTrackEventType.APP_INSTALL,
