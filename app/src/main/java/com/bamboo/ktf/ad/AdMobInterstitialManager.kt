@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.util.Log
 import com.bamboo.ktf.BuildConfig
-import com.bamboo.ktf.dataeye.AdMobDataEyeReporter
+import com.bamboo.ktf.dataeye.AdLoadSession
 import com.bamboo.ktf.dataeye.DataEyeAdConstants
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -16,22 +16,22 @@ import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 class AdMobInterstitialManager(
     private val context: Context,
     private val adUnitId: String,
-    private val scene: String = "unknown",
 ) {
     private var interstitialAd: InterstitialAd? = null
-    private val reporter = AdMobDataEyeReporter(
-        context = context,
-        adType = DataEyeAdConstants.AD_TYPE_INTERSTITIAL,
-        placementId = adUnitId,
-        scene = scene,
-    )
+    private var currentLoadSession: AdLoadSession? = null
 
-    fun load() {
+    fun load(scene: String) {
         if (adUnitId.isBlank()) return
         if (interstitialAd != null) return
 
-        reporter.resetForNewLoad()
-        reporter.request()
+        val loadSession = AdLoadSession(
+            context = context,
+            adType = DataEyeAdConstants.AD_TYPE_INTERSTITIAL,
+            placementId = adUnitId,
+            scene = scene,
+        )
+        currentLoadSession = loadSession
+        loadSession.request()
 
         InterstitialAd.load(
             context,
@@ -40,14 +40,11 @@ class AdMobInterstitialManager(
             object : InterstitialAdLoadCallback() {
                 override fun onAdLoaded(ad: InterstitialAd) {
                     interstitialAd = ad
-                    val loadedAdapter = ad.responseInfo.loadedAdapterResponseInfo
-                    if (loadedAdapter != null) {
-                        reporter.updateNetworkFirmId(loadedAdapter.adSourceName)
-                    }
-                    reporter.inventory()
+                    loadSession.updateNetworkFirmId(ad.responseInfo.loadedAdapterResponseInfo?.adSourceName)
+                    loadSession.inventory()
 
                     ad.onPaidEventListener = OnPaidEventListener { adValue ->
-                        reporter.onPaid(adValue)
+                        loadSession.onPaid(adValue)
                         if (BuildConfig.DEBUG) {
                             Log.d(
                                 TAG,
@@ -69,21 +66,19 @@ class AdMobInterstitialManager(
 
     fun show(activity: Activity) {
         val ad = interstitialAd ?: run {
-            load()
             return
         }
+        val loadSession = currentLoadSession ?: return
 
         ad.fullScreenContentCallback = object : FullScreenContentCallback() {
             override fun onAdDismissedFullScreenContent() {
                 Log.d(TAG, "Ad was dismissed.")
                 interstitialAd = null
-                load()
             }
 
             override fun onAdFailedToShowFullScreenContent(adError: com.google.android.gms.ads.AdError) {
                 Log.d(TAG, "Ad failed to show fullscreen content.")
                 interstitialAd = null
-                load()
             }
 
             override fun onAdShowedFullScreenContent() {
@@ -97,7 +92,7 @@ class AdMobInterstitialManager(
 
             override fun onAdClicked() {
                 Log.d(TAG, "The ad was clicked.")
-                reporter.click()
+                loadSession.click()
             }
         }
 

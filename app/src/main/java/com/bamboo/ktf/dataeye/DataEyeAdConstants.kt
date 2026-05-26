@@ -1,6 +1,8 @@
 package com.bamboo.ktf.dataeye
 
 object DataEyeAdConstants {
+    const val NETWORK_FIRM_ID_ADMOB = ""
+
     const val EVENT_REQUEST = "ad_request"
     const val EVENT_INVENTORY = "ad_inventory"
     const val EVENT_IMPRESSION = "ad_imp"
@@ -12,4 +14,3 @@ object DataEyeAdConstants {
     const val AD_TYPE_INTERSTITIAL = "Interstitial"
     const val AD_TYPE_SPLASH = "Splash"
 }
-

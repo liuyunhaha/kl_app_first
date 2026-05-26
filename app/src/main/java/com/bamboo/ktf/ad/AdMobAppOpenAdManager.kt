@@ -2,10 +2,9 @@ package com.bamboo.ktf.ad
 
 import android.app.Activity
 import android.app.Application
-import android.os.Bundle
 import android.util.Log
 import com.bamboo.ktf.BuildConfig
-import com.bamboo.ktf.dataeye.AdMobDataEyeReporter
+import com.bamboo.ktf.dataeye.AdLoadSession
 import com.bamboo.ktf.dataeye.DataEyeAdConstants
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
@@ -18,31 +17,27 @@ class AdMobAppOpenAdManager(
     private val application: Application,
     private val adUnitId: String,
     private val scene: String = "app_foreground",
-) : Application.ActivityLifecycleCallbacks {
+) {
 
-    private var currentActivity: Activity? = null
     private var appOpenAd: AppOpenAd? = null
     private var isShowingAd: Boolean = false
-    private val reporter = AdMobDataEyeReporter(
-        context = application,
-        adType = DataEyeAdConstants.AD_TYPE_SPLASH,
-        placementId = adUnitId,
-        scene = scene,
-    )
-
-    private var startedActivityCount: Int = 0
-    private var isChangingConfigurations: Boolean = false
+    private var currentLoadSession: AdLoadSession? = null
 
     init {
-        application.registerActivityLifecycleCallbacks(this)
         loadAd()
     }
 
     private fun loadAd() {
         if (adUnitId.isBlank() || appOpenAd != null) return
 
-        reporter.resetForNewLoad()
-        reporter.request()
+        val loadSession = AdLoadSession(
+            context = application,
+            adType = DataEyeAdConstants.AD_TYPE_SPLASH,
+            placementId = adUnitId,
+            scene = scene,
+        )
+        currentLoadSession = loadSession
+        loadSession.request()
 
         val request = AdRequest.Builder().build()
         AppOpenAd.load(
@@ -53,14 +48,10 @@ class AdMobAppOpenAdManager(
                 override fun onAdLoaded(ad: AppOpenAd) {
                     appOpenAd = ad
                     Log.d(TAG, "AppOpenAd loaded.")
-                    val loadedAdapter = ad.responseInfo.loadedAdapterResponseInfo
-
-                    if (loadedAdapter != null) {
-                        reporter.updateNetworkFirmId(loadedAdapter.adSourceName)
-                    }
-                    reporter.inventory()
+                    loadSession.updateNetworkFirmId(ad.responseInfo.loadedAdapterResponseInfo?.adSourceName)
+                    loadSession.inventory()
                     ad.onPaidEventListener = OnPaidEventListener { adValue ->
-                        reporter.onPaid(adValue)
+                        loadSession.onPaid(adValue)
                         if (BuildConfig.DEBUG) {
                             Log.d(
                                 TAG,
@@ -78,13 +69,15 @@ class AdMobAppOpenAdManager(
         )
     }
 
-    fun showIfAvailable(activity: Activity) {
+    fun showIfAvailable(activity: Activity, onComplete: () -> Unit = {}) {
         if (isShowingAd) return
 
         val ad = appOpenAd ?: run {
             loadAd()
+            onComplete()
             return
         }
+        val loadSession = currentLoadSession ?: return
 
         isShowingAd = true
         ad.fullScreenContentCallback = object : FullScreenContentCallback() {
@@ -93,6 +86,7 @@ class AdMobAppOpenAdManager(
                 appOpenAd = null
                 isShowingAd = false
                 loadAd()
+                onComplete()
             }
 
             override fun onAdFailedToShowFullScreenContent(adError: AdError) {
@@ -100,6 +94,7 @@ class AdMobAppOpenAdManager(
                 appOpenAd = null
                 isShowingAd = false
                 loadAd()
+                onComplete()
             }
 
             override fun onAdShowedFullScreenContent() {
@@ -113,34 +108,10 @@ class AdMobAppOpenAdManager(
 
             override fun onAdClicked() {
                 Log.d(TAG, "The ad was clicked.")
-                reporter.click()
+                loadSession.click()
             }
         }
         ad.show(activity)
-    }
-
-    override fun onActivityStarted(activity: Activity) {
-        startedActivityCount++
-        if (startedActivityCount == 1 && !isChangingConfigurations) {
-            showIfAvailable(activity)
-        }
-        isChangingConfigurations = false
-    }
-
-    override fun onActivityStopped(activity: Activity) {
-        isChangingConfigurations = activity.isChangingConfigurations
-        startedActivityCount--
-    }
-
-    override fun onActivityResumed(activity: Activity) {
-        currentActivity = activity
-    }
-
-    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
-    override fun onActivityPaused(activity: Activity) {}
-    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
-    override fun onActivityDestroyed(activity: Activity) {
-        if (currentActivity === activity) currentActivity = null
     }
 
     companion object {

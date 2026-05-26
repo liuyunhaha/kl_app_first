@@ -1,7 +1,6 @@
 package com.bamboo.ktf.dataeye
 
 import android.content.Context
-import android.util.Log
 import com.bamboo.ktf.KtfApplication
 import org.json.JSONObject
 
@@ -79,8 +78,7 @@ object DataEyeAdTracker {
     }
 
     private fun track(context: Context, eventName: String, properties: JSONObject) {
-        Log.e("track--------", "eventName: $eventName properties:${properties.toString()}")
         val instance = KtfApplication.dataEyeInstance ?: return
-//        instance.track(eventName, properties)
+        instance.track(eventName, properties)
     }
 }

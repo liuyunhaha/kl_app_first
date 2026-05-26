@@ -1,6 +1,5 @@
 package com.bamboo.ktf
 
-import android.app.Activity
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -24,9 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.bamboo.ktf.ad.AdMobBanner
-import com.bamboo.ktf.ad.AdMobInterstitialManager
 import com.bamboo.ktf.ad.AdMobNativeAd
-import com.bamboo.ktf.ad.AdMobRewardedManager
+import com.bamboo.ktf.ad.AdMobInterstitialPool
+import com.bamboo.ktf.ad.AdMobRewardedPool
 import com.bamboo.ktf.ui.theme.MyApplicationTheme
 
 class AdTestActivity : ComponentActivity() {
@@ -46,26 +45,20 @@ class AdTestActivity : ComponentActivity() {
 @Composable
 private fun AdTestScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val activity = context as? Activity
+    val activity = context as? android.app.Activity
 
-    val interstitialManager = remember {
-        AdMobInterstitialManager(
-            context = context,
-            adUnitId = Constants.ADMOB_INTERSTITIAL_AD_UNIT_ID,
-            scene = "ad_test_page",
-        )
+    val interstitialPool = remember {
+        AdMobInterstitialPool(context = context)
     }
-    val rewardedManager = remember {
-        AdMobRewardedManager(
-            context = context,
-            adUnitId = Constants.ADMOB_REWARDED_AD_UNIT_ID,
-            scene = "ad_test_page",
-        )
+    val rewardedPool = remember {
+        AdMobRewardedPool(context = context)
     }
 
     LaunchedEffect(Unit) {
-        interstitialManager.load()
-        rewardedManager.load()
+        interstitialPool.load(Constants.ADMOB_INTERSTITIAL_AD_UNIT_ID, "ad_test_interstitial_a")
+        interstitialPool.load(Constants.ADMOB_INTERSTITIAL_AD_UNIT_ID_B, "ad_test_interstitial_b")
+        rewardedPool.load(Constants.ADMOB_REWARDED_AD_UNIT_ID, "ad_test_rewarded_a")
+        rewardedPool.load(Constants.ADMOB_REWARDED_AD_UNIT_ID_B, "ad_test_rewarded_b")
     }
 
     Column(
@@ -77,19 +70,6 @@ private fun AdTestScreen(modifier: Modifier = Modifier) {
     ) {
         Text("AdMob 测试页（使用测试广告位）")
 
-        Text("AppOpenAd")
-        Button(
-            onClick = {
-                val mgr = KtfApplication.appOpenAdManager
-                if (activity == null || mgr == null) return@Button
-                mgr.showIfAvailable(activity)
-            },
-        ) {
-            Text("展示 AppOpenAd")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
         Text("Banner")
         AdMobBanner(
             adUnitId = Constants.ADMOB_BANNER_AD_UNIT_ID,
@@ -99,26 +79,42 @@ private fun AdTestScreen(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text("InterstitialAd")
-        Button(onClick = { interstitialManager.load() }) { Text("加载 Interstitial") }
+        Button(onClick = { interstitialPool.load(Constants.ADMOB_INTERSTITIAL_AD_UNIT_ID, "ad_test_interstitial_a") }) { Text("加载 Interstitial A") }
+        Button(onClick = { interstitialPool.load(Constants.ADMOB_INTERSTITIAL_AD_UNIT_ID_B, "ad_test_interstitial_b") }) { Text("加载 Interstitial B") }
         Button(
             onClick = {
                 if (activity == null) return@Button
-                interstitialManager.show(activity)
+                interstitialPool.show(activity, Constants.ADMOB_INTERSTITIAL_AD_UNIT_ID)
             },
-        ) { Text("展示 Interstitial") }
+        ) { Text("展示 Interstitial A") }
+        Button(
+            onClick = {
+                if (activity == null) return@Button
+                interstitialPool.show(activity, Constants.ADMOB_INTERSTITIAL_AD_UNIT_ID_B)
+            },
+        ) { Text("展示 Interstitial B") }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text("RewardedAd")
-        Button(onClick = { rewardedManager.load() }) { Text("加载 Rewarded") }
+        Button(onClick = { rewardedPool.load(Constants.ADMOB_REWARDED_AD_UNIT_ID, "ad_test_rewarded_a") }) { Text("加载 Rewarded A") }
+        Button(onClick = { rewardedPool.load(Constants.ADMOB_REWARDED_AD_UNIT_ID_B, "ad_test_rewarded_b") }) { Text("加载 Rewarded B") }
         Button(
             onClick = {
                 if (activity == null) return@Button
-                rewardedManager.show(activity) { amount, type ->
+                rewardedPool.show(activity, Constants.ADMOB_REWARDED_AD_UNIT_ID) { amount, type ->
+                    Toast.makeText(context, "A奖励：$amount $type", Toast.LENGTH_SHORT).show()
+                }
+            },
+        ) { Text("展示 Rewarded A") }
+        Button(
+            onClick = {
+                if (activity == null) return@Button
+                rewardedPool.show(activity, Constants.ADMOB_REWARDED_AD_UNIT_ID_B) { amount, type ->
                     Toast.makeText(context, "获得奖励：$amount $type", Toast.LENGTH_SHORT).show()
                 }
             },
-        ) { Text("展示 Rewarded") }
+        ) { Text("展示 Rewarded B") }
 
         Spacer(modifier = Modifier.height(8.dp))
 

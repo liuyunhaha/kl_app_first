@@ -13,8 +13,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
-import com.bamboo.ktf.dataeye.AdMobDataEyeReporter
 import com.bamboo.ktf.dataeye.DataEyeAdConstants
+import com.bamboo.ktf.dataeye.AdLoadSession
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
@@ -30,8 +30,8 @@ fun AdMobNativeAd(
 ) {
     val context = LocalContext.current
     val nativeAdState: MutableState<NativeAd?> = remember { mutableStateOf(null) }
-    val reporter = remember(adUnitId, scene) {
-        AdMobDataEyeReporter(
+    val loadSession = remember(adUnitId, scene) {
+        AdLoadSession(
             context = context,
             adType = DataEyeAdConstants.AD_TYPE_NATIVE,
             placementId = adUnitId,
@@ -42,23 +42,19 @@ fun AdMobNativeAd(
     LaunchedEffect(adUnitId) {
         nativeAdState.value?.destroy()
         nativeAdState.value = null
-        reporter.resetForNewLoad()
 
         if (adUnitId.isBlank()) return@LaunchedEffect
 
-        reporter.request()
+        loadSession.request()
 
         val adLoader = AdLoader.Builder(context, adUnitId)
             .forNativeAd { ad: NativeAd ->
                 nativeAdState.value?.destroy()
                 nativeAdState.value = ad
-                val loadedAdapter = ad.responseInfo?.loadedAdapterResponseInfo
-                if (loadedAdapter != null) {
-                    reporter.updateNetworkFirmId(loadedAdapter.adSourceName)
-                }
-                reporter.inventory()
+                loadSession.updateNetworkFirmId(ad.responseInfo?.loadedAdapterResponseInfo?.adSourceName)
+                loadSession.inventory()
                 ad.setOnPaidEventListener { adValue ->
-                    reporter.onPaid(adValue)
+                    loadSession.onPaid(adValue)
                 }
             }
             .withAdListener(object : AdListener() {
@@ -66,7 +62,7 @@ fun AdMobNativeAd(
                 }
 
                 override fun onAdClicked() {
-                    reporter.click()
+                    loadSession.click()
                 }
 
                 override fun onAdFailedToLoad(loadAdError: LoadAdError) {

@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.util.Log
 import com.bamboo.ktf.BuildConfig
-import com.bamboo.ktf.dataeye.AdMobDataEyeReporter
+import com.bamboo.ktf.dataeye.AdLoadSession
 import com.bamboo.ktf.dataeye.DataEyeAdConstants
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -16,22 +16,22 @@ import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 class AdMobRewardedManager(
     private val context: Context,
     private val adUnitId: String,
-    private val scene: String = "unknown",
 ) {
     private var rewardedAd: RewardedAd? = null
-    private val reporter = AdMobDataEyeReporter(
-        context = context,
-        adType = DataEyeAdConstants.AD_TYPE_REWARDED_VIDEO,
-        placementId = adUnitId,
-        scene = scene,
-    )
+    private var currentLoadSession: AdLoadSession? = null
 
-    fun load() {
+    fun load(scene: String) {
         if (adUnitId.isBlank()) return
         if (rewardedAd != null) return
 
-        reporter.resetForNewLoad()
-        reporter.request()
+        val loadSession = AdLoadSession(
+            context = context,
+            adType = DataEyeAdConstants.AD_TYPE_REWARDED_VIDEO,
+            placementId = adUnitId,
+            scene = scene,
+        )
+        currentLoadSession = loadSession
+        loadSession.request()
 
         RewardedAd.load(
             context,
@@ -43,13 +43,10 @@ class AdMobRewardedManager(
                         Log.w(TAG, "0 The ad loaded")
                     }
                     rewardedAd = ad
-                    val loadedAdapter = ad.responseInfo?.loadedAdapterResponseInfo
-                    if (loadedAdapter != null) {
-                        reporter.updateNetworkFirmId(loadedAdapter.adSourceName)
-                    }
-                    reporter.inventory()
+                    loadSession.updateNetworkFirmId(ad.responseInfo.loadedAdapterResponseInfo?.adSourceName)
+                    loadSession.inventory()
                     ad.onPaidEventListener = OnPaidEventListener { adValue ->
-                        reporter.onPaid(adValue)
+                        loadSession.onPaid(adValue)
                         if (BuildConfig.DEBUG) {
                             Log.d(
                                 TAG,
@@ -71,21 +68,19 @@ class AdMobRewardedManager(
 
     fun show(activity: Activity, onRewardEarned: (amount: Int, type: String) -> Unit) {
         val ad = rewardedAd ?: run {
-            load()
             return
         }
+        val loadSession = currentLoadSession ?: return
 
         ad.fullScreenContentCallback = object : FullScreenContentCallback() {
             override fun onAdDismissedFullScreenContent() {
                 Log.d(TAG, "The ad was dismissed.")
                 rewardedAd = null
-                load()
             }
 
             override fun onAdFailedToShowFullScreenContent(adError: com.google.android.gms.ads.AdError) {
                 Log.d(TAG, "The ad failed to show.")
                 rewardedAd = null
-                load()
             }
 
             override fun onAdShowedFullScreenContent() {
@@ -99,7 +94,7 @@ class AdMobRewardedManager(
 
             override fun onAdClicked() {
                 Log.d(TAG, "The ad was clicked.")
-                reporter.click()
+                loadSession.click()
             }
         }
 

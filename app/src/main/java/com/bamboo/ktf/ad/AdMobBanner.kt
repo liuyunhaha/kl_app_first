@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.bamboo.ktf.dataeye.DataEyeAdConstants
-import com.bamboo.ktf.dataeye.AdMobDataEyeReporter
+import com.bamboo.ktf.dataeye.AdLoadSession
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
@@ -24,8 +24,8 @@ fun AdMobBanner(
     scene: String = "unknown",
 ) {
     val context = LocalContext.current
-    val reporter = remember(adUnitId, scene) {
-        AdMobDataEyeReporter(
+    val loadSession = remember(adUnitId, scene) {
+        AdLoadSession(
             context = context,
             adType = DataEyeAdConstants.AD_TYPE_BANNER,
             placementId = adUnitId,
@@ -41,15 +41,14 @@ fun AdMobBanner(
                 this.adUnitId = adUnitId
 
                 if (adUnitId.isNotBlank()) {
-                    reporter.resetForNewLoad()
-                    reporter.request()
+                    loadSession.request()
                 }
                 loadAd(AdRequest.Builder().build())
                 adListener =
                     object : AdListener() {
                         override fun onAdClicked() {
                             Log.d("adview onClick", "onAdClicked")
-                            reporter.click()
+                            loadSession.click()
                         }
 
                         override fun onAdClosed() {
@@ -68,11 +67,8 @@ fun AdMobBanner(
 
                         override fun onAdLoaded() {
                             Log.d("adview onLoaded", "onAdLoaded")
-                            val loadedAdapter = responseInfo?.loadedAdapterResponseInfo
-                            if (loadedAdapter != null) {
-                                reporter.updateNetworkFirmId(loadedAdapter.adSourceName)
-                            }
-                            reporter.inventory()
+                            loadSession.updateNetworkFirmId(responseInfo?.loadedAdapterResponseInfo?.adSourceName)
+                            loadSession.inventory()
                         }
 
                         override fun onAdOpened() {
@@ -82,7 +78,7 @@ fun AdMobBanner(
                         }
                     }
                 onPaidEventListener = OnPaidEventListener { adValue ->
-                    reporter.onPaid(adValue)
+                    loadSession.onPaid(adValue)
                     Log.d(
                         "adview onPaid",
                         "valueMicros=${adValue.valueMicros}, currencyCode=${adValue.currencyCode}, precisionType=${adValue.precisionType}",
